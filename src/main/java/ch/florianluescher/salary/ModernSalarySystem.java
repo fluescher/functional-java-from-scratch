@@ -21,26 +21,29 @@ public class ModernSalarySystem implements SalarySystem {
 
     @Override
     public Salary paySalary(int employeeId) {
-        final Nullable<EmployeeRecord> employeeRecord = Nullable.fromReference(hrSystem.getEmployeeInfo(employeeId));
         Salary salary = null;
 
+        final Nullable<EmployeeRecord> employeeRecord = Nullable.fromReference(hrSystem.getEmployeeInfo(employeeId));
         if (employeeRecord.isPresent()) {
+            final EmployeeRecord employeeInfo = employeeRecord.get();
 
-            if (employeeRecord.get().isActive()) {
+            if (!employeeInfo.isActive()) {
+                return salary;
+            }
 
-                if (employeeRecord.get().getSalaryType() == SalaryType.MONTHLY) {
-                    bank.doTransaction(employeeRecord.get().getTargetIBAN(), employeeRecord.get().getSalary());
-                    salary = new Salary(employeeRecord.get().getSalary());
-                } else {
-                    final Nullable<TimeTrackingInformation> info = Nullable.fromReference(timeTracker.getTimeTrackingInformation(employeeId));
-                    if (info.isPresent()) {
+            if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
+                bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
+                salary = new Salary(employeeInfo.getSalary());
+            } else {
+                final Nullable<TimeTrackingInformation> info = Nullable.fromReference(timeTracker.getTimeTrackingInformation(employeeId));
+                if (info.isPresent()) {
 
-                        final int hours = info.get().getTotalHours();
+                    final TimeTrackingInformation timeTrackingInformation = info.get();
+                    final int hours = timeTrackingInformation.getTotalHours();
 
-                        final int amount = hours * employeeRecord.get().getSalary();
-                        bank.doTransaction(employeeRecord.get().getTargetIBAN(), amount);
-                        salary = new Salary(amount);
-                    }
+                    final int amount = hours * employeeInfo.getSalary();
+                    bank.doTransaction(employeeInfo.getTargetIBAN(), amount);
+                    salary = new Salary(amount);
                 }
             }
         }
