@@ -21,34 +21,30 @@ public class ModernSalarySystem implements SalarySystem {
 
     @Override
     public Salary paySalary(int employeeId) {
-        Salary salary = null;
 
-        final Nullable<EmployeeRecord> employeeRecord = Nullable.fromReference(hrSystem.getEmployeeInfo(employeeId));
-        if (employeeRecord.isPresent()) {
-            final EmployeeRecord employeeInfo = employeeRecord.get();
+        return queryHrSystem(employeeId)
+                .filter(employeeRecord -> employeeRecord.isActive())
+                .flatMap(employeeInfo -> calculateSalary(employeeId, employeeInfo))
+                .ifPresent(salaryToPay -> bank.doTransaction(salaryToPay.getTransferredToIBAN(), salaryToPay.getAmount()))
+                .getOrElse(null);
+    }
 
-            if (!employeeInfo.isActive()) {
-                return salary;
-            }
+    private Nullable<EmployeeRecord> queryHrSystem(int employeeId) {
+        return Nullable.of(hrSystem.getEmployeeInfo(employeeId));
+    }
 
-            if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
-                bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
-                salary = new Salary(employeeInfo.getSalary());
-            } else {
-                final Nullable<TimeTrackingInformation> info = Nullable.fromReference(timeTracker.getTimeTrackingInformation(employeeId));
-                if (info.isPresent()) {
+    private Nullable<TimeTrackingInformation> queryTimeTrackingSystem(int employeeId) {
+        return Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
+    }
 
-                    final TimeTrackingInformation timeTrackingInformation = info.get();
-                    final int hours = timeTrackingInformation.getTotalHours();
-
-                    final int amount = hours * employeeInfo.getSalary();
-                    bank.doTransaction(employeeInfo.getTargetIBAN(), amount);
-                    salary = new Salary(amount);
-                }
-            }
+    private Nullable<Salary> calculateSalary(int employeeId, EmployeeRecord employeeInfo) {
+        if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
+            return Nullable.of(new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary()));
+        } else {
+            return queryTimeTrackingSystem(employeeId)
+                    .map(timeTrackingInformation -> timeTrackingInformation.getTotalHours() * employeeInfo.getSalary())
+                    .map(amount -> new Salary(employeeInfo.getTargetIBAN(), amount));
         }
-
-        return salary;
     }
 
     @Override

@@ -28,7 +28,7 @@ public class StandardSalarySystem implements SalarySystem {
 
         if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
             bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
-            return new Salary(employeeInfo.getSalary());
+            return new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
         } else {
             final TimeTrackingInformation timeTrackingInformation = timeTracker.getTimeTrackingInformation(employeeId);
             if(timeTrackingInformation == null) return null;
@@ -37,7 +37,7 @@ public class StandardSalarySystem implements SalarySystem {
 
             final int amount = hours * employeeInfo.getSalary();
             bank.doTransaction(employeeInfo.getTargetIBAN(), amount);
-            return new Salary(amount);
+            return new Salary(employeeInfo.getTargetIBAN(), amount);
         }
     }
 
