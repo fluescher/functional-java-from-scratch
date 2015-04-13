@@ -9,3 +9,5 @@
   4. flatMap
   5. filter
   6. ifPresent
+4. Add standard error handling implementation
+5. Introduce Try with getOrElse()
