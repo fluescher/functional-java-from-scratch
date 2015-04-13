@@ -25,23 +25,22 @@ public class ModernSalarySystem implements SalarySystem {
     public Salary paySalary(int employeeId) {
 
         final Nullable<EmployeeRecord> optionalEmployeeInfo = Nullable.of(hrSystem.getEmployeeInfo(employeeId));
-        final Nullable<Salary> nullableSalary = optionalEmployeeInfo.flatMap(employeeInfo -> {
-            if (!employeeInfo.isActive()) return Nullable.of(null);
+        return optionalEmployeeInfo
+                    .filter(employeeRecord -> employeeRecord.isActive())
+                    .flatMap(employeeInfo -> {
+                        if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
+                            bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
+                            return Nullable.of(new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary()));
+                        } else {
+                            final Nullable<TimeTrackingInformation> optionalTimeTrackingInformation = Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
+                            return optionalTimeTrackingInformation.map(trackingInformation -> {
+                                final int salary = employeeInfo.getSalary() * trackingInformation.getTotalHours();
 
-            if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
-                bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
-                return Nullable.of(new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary()));
-            } else {
-                final Nullable<TimeTrackingInformation> optionalTimeTrackingInformation = Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
-                return optionalTimeTrackingInformation.map(trackingInformation -> {
-                    final int salary = employeeInfo.getSalary() * trackingInformation.getTotalHours();
-
-                    bank.doTransaction(employeeInfo.getTargetIBAN(), salary);
-                    return new Salary(employeeInfo.getTargetIBAN(), salary);
-                });
-            }
-        });
-        return nullableSalary.getOrElse(null);
+                                bank.doTransaction(employeeInfo.getTargetIBAN(), salary);
+                                return new Salary(employeeInfo.getTargetIBAN(), salary);
+                            });
+                        }
+        }).getOrElse(null);
     }
 
     @Override

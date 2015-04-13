@@ -2,6 +2,7 @@ package ch.florianluescher.salary;
 
 import java.util.NoSuchElementException;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public interface Nullable <T> {
     boolean isPresent();
@@ -9,6 +10,7 @@ public interface Nullable <T> {
     T getOrElse(T fallback);
     <U> Nullable<U> map(Function<T,U> f);
     <U> Nullable<U> flatMap(Function<T, Nullable<U>> f);
+    Nullable<T> filter(Predicate<T> predicate);
 
     static <T> Nullable<T> of(T reference) {
         if(reference == null) return new Null();
@@ -50,6 +52,15 @@ public interface Nullable <T> {
         public <U> Nullable<U> flatMap(Function<T, Nullable<U>> f) {
             return f.apply(this.value);
         }
+
+        @Override
+        public Nullable<T> filter(Predicate<T> predicate) {
+            if(predicate.test(this.value)) {
+                return this;
+            } else {
+                return new Null<T>();
+            }
+        }
     }
 
     class Null<T> implements Nullable<T> {
@@ -80,6 +91,11 @@ public interface Nullable <T> {
         @Override
         public <U> Nullable<U> flatMap(Function<T, Nullable<U>> f) {
             return new Null<>();
+        }
+
+        @Override
+        public Nullable<T> filter(Predicate<T> predicate) {
+            return this;
         }
     }
 }
