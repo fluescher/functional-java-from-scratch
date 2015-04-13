@@ -21,24 +21,7 @@ public class StandardSalarySystem implements SalarySystem {
 
     @Override
     public Salary paySalary(int employeeId) {
-
-        final EmployeeRecord employeeInfo = hrSystem.getEmployeeInfo(employeeId);
-        if (employeeInfo == null) return null;
-        if(!employeeInfo.isActive()) return null;
-
-        if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
-            bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
-            return new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
-        } else {
-            final TimeTrackingInformation timeTrackingInformation = timeTracker.getTimeTrackingInformation(employeeId);
-            if(timeTrackingInformation == null) return null;
-
-            final int hours = timeTrackingInformation.getTotalHours();
-
-            final int amount = hours * employeeInfo.getSalary();
-            bank.doTransaction(employeeInfo.getTargetIBAN(), amount);
-            return new Salary(employeeInfo.getTargetIBAN(), amount);
-        }
+        return null;
     }
 
     @Override

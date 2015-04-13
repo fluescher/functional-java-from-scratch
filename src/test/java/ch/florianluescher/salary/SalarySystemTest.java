@@ -58,42 +58,6 @@ public class SalarySystemTest {
         verify(bankMock).doTransaction("IBAN", 84 * 195);
     }
 
-    @Test
-    public void paySalary_whenEmployeeHasHourlySalaryButNoTimeInformation_doesNotPayTheSalary() {
-
-        final EmployeeRecord hourlyPayedEmployee = new EmployeeRecord(1297, "Muster", "Max", 84, HOURLY, "IBAN", true);
-        when(hrSystemMock.getEmployeeInfo(1297)).thenReturn(hourlyPayedEmployee);
-        when(timeTrackerMock.getTimeTrackingInformation(1297)).thenReturn(null);
-
-        Salary paidSalary = salarySystem.paySalary(1297);
-
-        assertNull(paidSalary);
-        verify(bankMock, never()).doTransaction(anyString(), anyInt());
-    }
-
-    @Test
-    public void paySalary_whenEmployeeHasLeftTheCompany_doesNotPayASalary() {
-
-        final EmployeeRecord formerEmployee = new EmployeeRecord(1297, "Meier", "Hans", 5540, MONTHLY, "IBAN", false);
-        when(hrSystemMock.getEmployeeInfo(1297)).thenReturn(formerEmployee);
-
-        Salary paidSalary = salarySystem.paySalary(1297);
-
-        assertEquals(null, paidSalary);
-        verify(bankMock, never()).doTransaction(anyString(), anyInt());
-    }
-
-    @Test
-    public void paySalary_whenTheEmployeeDoesNotExists_doesNotPayASalary() {
-
-        when(hrSystemMock.getEmployeeInfo(1297)).thenReturn(null);
-
-        Salary paidSalary = salarySystem.paySalary(1297);
-
-        assertNull(paidSalary);
-        verify(bankMock, never()).doTransaction(anyString(), anyInt());
-    }
-
     @After
     public void resetMocks() {
         reset(bankMock);
@@ -106,6 +70,6 @@ public class SalarySystemTest {
         final StandardSalarySystem standardSalarySystem = new StandardSalarySystem(bankMock, hrSystemMock, timeTrackerMock);
         final ModernSalarySystem modernSalarySystem = new ModernSalarySystem(bankMock, hrSystemMock, timeTrackerMock);
 
-        return asList(standardSalarySystem, modernSalarySystem);
+        return asList(standardSalarySystem);//, modernSalarySystem);
     }
 }

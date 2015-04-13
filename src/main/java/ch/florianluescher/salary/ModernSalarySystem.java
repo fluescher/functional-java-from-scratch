@@ -21,30 +21,7 @@ public class ModernSalarySystem implements SalarySystem {
 
     @Override
     public Salary paySalary(int employeeId) {
-
-        return queryHrSystem(employeeId)
-                .filter(employeeRecord -> employeeRecord.isActive())
-                .flatMap(employeeInfo -> calculateSalary(employeeId, employeeInfo))
-                .ifPresent(salaryToPay -> bank.doTransaction(salaryToPay.getTransferredToIBAN(), salaryToPay.getAmount()))
-                .getOrElse(null);
-    }
-
-    private Nullable<EmployeeRecord> queryHrSystem(int employeeId) {
-        return Nullable.of(hrSystem.getEmployeeInfo(employeeId));
-    }
-
-    private Nullable<TimeTrackingInformation> queryTimeTrackingSystem(int employeeId) {
-        return Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
-    }
-
-    private Nullable<Salary> calculateSalary(int employeeId, EmployeeRecord employeeInfo) {
-        if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
-            return Nullable.of(new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary()));
-        } else {
-            return queryTimeTrackingSystem(employeeId)
-                    .map(timeTrackingInformation -> timeTrackingInformation.getTotalHours() * employeeInfo.getSalary())
-                    .map(amount -> new Salary(employeeInfo.getTargetIBAN(), amount));
-        }
+        return null;
     }
 
     @Override
