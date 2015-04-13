@@ -7,6 +7,8 @@ import ch.florianluescher.salary.hrsystem.SalaryType;
 import ch.florianluescher.salary.timetracker.TimeTracker;
 import ch.florianluescher.salary.timetracker.TimeTrackingInformation;
 
+import java.util.Optional;
+
 public class ModernSalarySystem implements SalarySystem {
 
     private final Bank bank;
@@ -21,7 +23,23 @@ public class ModernSalarySystem implements SalarySystem {
 
     @Override
     public Salary paySalary(int employeeId) {
-        return null;
+
+        final Nullable<EmployeeRecord> employeeInfo = Nullable.of(hrSystem.getEmployeeInfo(employeeId));
+        if(!employeeInfo.isPresent()) return null;
+        if(!employeeInfo.get().isActive()) return null;
+
+        if(employeeInfo.get().getSalaryType() == SalaryType.MONTHLY) {
+            bank.doTransaction(employeeInfo.get().getTargetIBAN(), employeeInfo.get().getSalary());
+            return new Salary(employeeInfo.get().getTargetIBAN(), employeeInfo.get().getSalary());
+        } else {
+            final Nullable<TimeTrackingInformation> timeTrackingInformation = Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
+            if(!timeTrackingInformation.isPresent()) return null;
+
+            final int salary = employeeInfo.get().getSalary() * timeTrackingInformation.get().getTotalHours();
+
+            bank.doTransaction(employeeInfo.get().getTargetIBAN(), salary);
+            return new Salary(employeeInfo.get().getTargetIBAN(), salary);
+        }
     }
 
     @Override

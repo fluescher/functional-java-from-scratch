@@ -106,6 +106,6 @@ public class SalarySystemTest {
         final StandardSalarySystem standardSalarySystem = new StandardSalarySystem(bankMock, hrSystemMock, timeTrackerMock);
         final ModernSalarySystem modernSalarySystem = new ModernSalarySystem(bankMock, hrSystemMock, timeTrackerMock);
 
-        return asList(standardSalarySystem);//, modernSalarySystem);
+        return asList(standardSalarySystem, modernSalarySystem);
     }
 }
