@@ -21,15 +21,13 @@ public class ModernSalarySystem implements SalarySystem {
 
     @Override
     public Salary paySalary(int employeeId) {
-        try {
-            return queryHrSystem(employeeId)
-                    .filter(employeeRecord -> employeeRecord.isActive())
-                    .flatMap(employeeInfo -> calculateSalary(employeeId, employeeInfo))
-                    .ifPresent(salaryToPay -> bank.doTransaction(salaryToPay.getTransferredToIBAN(), salaryToPay.getAmount()))
-                    .getOrElse(null);
-        } catch (Exception ex) {
-            return null;
-        }
+        return Try.to(
+                () -> queryHrSystem(employeeId)
+                        .filter(employeeRecord -> employeeRecord.isActive())
+                        .flatMap(employeeInfo -> calculateSalary(employeeId, employeeInfo))
+                        .ifPresent(salaryToPay -> bank.doTransaction(salaryToPay.getTransferredToIBAN(), salaryToPay.getAmount()))
+                        .getOrElse(null)
+        ).getOrElse(null);
     }
 
     private Nullable<EmployeeRecord> queryHrSystem(int employeeId) {
