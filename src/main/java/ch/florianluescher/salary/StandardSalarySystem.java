@@ -23,12 +23,15 @@ public class StandardSalarySystem implements SalarySystem {
     public Salary paySalary(int employeeId) {
 
         final EmployeeRecord employeeInfo = hrSystem.getEmployeeInfo(employeeId);
+        if(employeeInfo == null) return null;
+        if(!employeeInfo.isActive()) return null;
 
         if(employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
             bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
             return new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
         } else {
             final TimeTrackingInformation timeTrackingInformation = timeTracker.getTimeTrackingInformation(employeeId);
+            if(timeTrackingInformation == null) return null;
 
             final int salary = employeeInfo.getSalary() * timeTrackingInformation.getTotalHours();
 
