@@ -7,8 +7,6 @@ import ch.florianluescher.salary.hrsystem.SalaryType;
 import ch.florianluescher.salary.timetracker.TimeTracker;
 import ch.florianluescher.salary.timetracker.TimeTrackingInformation;
 
-import java.util.Optional;
-
 public class ModernSalarySystem implements SalarySystem {
 
     private final Bank bank;
@@ -24,23 +22,29 @@ public class ModernSalarySystem implements SalarySystem {
     @Override
     public Salary paySalary(int employeeId) {
 
-        final Nullable<EmployeeRecord> optionalEmployeeInfo = Nullable.of(hrSystem.getEmployeeInfo(employeeId));
-        return optionalEmployeeInfo
-                    .filter(employeeRecord -> employeeRecord.isActive())
-                    .flatMap(employeeInfo -> {
-                        if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
-                            bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
-                            return Nullable.of(new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary()));
-                        } else {
-                            final Nullable<TimeTrackingInformation> optionalTimeTrackingInformation = Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
-                            return optionalTimeTrackingInformation.map(trackingInformation -> {
-                                final int salary = employeeInfo.getSalary() * trackingInformation.getTotalHours();
+        return queryHrSystem(employeeId)
+                .filter(employeeRecord -> employeeRecord.isActive())
+                .flatMap(employeeInfo -> calculateSalary(employeeId, employeeInfo))
+                .ifPresent(salaryToPay -> bank.doTransaction(salaryToPay.getTransferredToIBAN(), salaryToPay.getAmount()))
+                .getOrElse(null);
+    }
 
-                                bank.doTransaction(employeeInfo.getTargetIBAN(), salary);
-                                return new Salary(employeeInfo.getTargetIBAN(), salary);
-                            });
-                        }
-        }).getOrElse(null);
+    private Nullable<EmployeeRecord> queryHrSystem(int employeeId) {
+        return Nullable.of(hrSystem.getEmployeeInfo(employeeId));
+    }
+
+    private Nullable<TimeTrackingInformation> queryTimeTrackingSystem(int employeeId) {
+        return Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
+    }
+
+    private Nullable<Salary> calculateSalary(int employeeId, EmployeeRecord employeeInfo) {
+        if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
+            return Nullable.of(new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary()));
+        } else {
+            return queryTimeTrackingSystem(employeeId)
+                    .map(timeTrackingInformation -> timeTrackingInformation.getTotalHours() * employeeInfo.getSalary())
+                    .map(amount -> new Salary(employeeInfo.getTargetIBAN(), amount));
+        }
     }
 
     @Override
