@@ -11,3 +11,5 @@ libraryDependencies ++= Seq(
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
 	"com.novocode" % "junit-interface" % "0.11" % "test"
 )
+
+historyRef := "presentation"
