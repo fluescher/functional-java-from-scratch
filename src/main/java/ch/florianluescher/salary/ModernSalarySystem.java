@@ -24,22 +24,28 @@ public class ModernSalarySystem implements SalarySystem {
     @Override
     public Salary paySalary(int employeeId) {
 
-        final Nullable<EmployeeRecord> employeeInfo = Nullable.of(hrSystem.getEmployeeInfo(employeeId));
-        if(!employeeInfo.isPresent()) return null;
-        if(!employeeInfo.get().isActive()) return null;
+        final Nullable<EmployeeRecord> optionalEmployeeInfo = Nullable.of(hrSystem.getEmployeeInfo(employeeId));
+        final Nullable<Salary> nullableSalary = optionalEmployeeInfo.map(employeeInfo -> {
+            if (!employeeInfo.isActive()) return null;
 
-        if(employeeInfo.get().getSalaryType() == SalaryType.MONTHLY) {
-            bank.doTransaction(employeeInfo.get().getTargetIBAN(), employeeInfo.get().getSalary());
-            return new Salary(employeeInfo.get().getTargetIBAN(), employeeInfo.get().getSalary());
-        } else {
-            final Nullable<TimeTrackingInformation> timeTrackingInformation = Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
-            if(!timeTrackingInformation.isPresent()) return null;
+            if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
+                bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
+                return new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
+            } else {
+                final Nullable<TimeTrackingInformation> optionalTimeTrackingInformation = Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
 
-            final int salary = employeeInfo.get().getSalary() * timeTrackingInformation.get().getTotalHours();
+                final Nullable<Salary> optionalSalary = optionalTimeTrackingInformation.map(trackingInformation -> {
+                    final int salary = employeeInfo.getSalary() * trackingInformation.getTotalHours();
 
-            bank.doTransaction(employeeInfo.get().getTargetIBAN(), salary);
-            return new Salary(employeeInfo.get().getTargetIBAN(), salary);
-        }
+                    bank.doTransaction(employeeInfo.getTargetIBAN(), salary);
+                    return new Salary(employeeInfo.getTargetIBAN(), salary);
+                });
+                if (optionalSalary.isPresent()) return optionalSalary.get();
+                return null;
+            }
+        });
+        if(nullableSalary.isPresent()) return nullableSalary.get();
+        return null;
     }
 
     @Override
