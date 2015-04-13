@@ -94,6 +94,16 @@ public class SalarySystemTest {
         verify(bankMock, never()).doTransaction(anyString(), anyInt());
     }
 
+    @Test
+    public void paySalary_whenATechnicalErrorOccurs_doesNotPayASalaryOrThrowAnException() {
+        when(hrSystemMock.getEmployeeInfo(1297)).thenThrow(new RuntimeException("MOCKED"));
+
+        Salary paidSalary = salarySystem.paySalary(1297);
+
+        assertNull(paidSalary);
+        verify(bankMock, never()).doTransaction(anyString(), anyInt());
+    }
+
     @After
     public void resetMocks() {
         reset(bankMock);
