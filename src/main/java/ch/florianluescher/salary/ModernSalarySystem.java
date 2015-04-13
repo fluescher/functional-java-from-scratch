@@ -25,27 +25,23 @@ public class ModernSalarySystem implements SalarySystem {
     public Salary paySalary(int employeeId) {
 
         final Nullable<EmployeeRecord> optionalEmployeeInfo = Nullable.of(hrSystem.getEmployeeInfo(employeeId));
-        final Nullable<Salary> nullableSalary = optionalEmployeeInfo.map(employeeInfo -> {
-            if (!employeeInfo.isActive()) return null;
+        final Nullable<Salary> nullableSalary = optionalEmployeeInfo.flatMap(employeeInfo -> {
+            if (!employeeInfo.isActive()) return Nullable.of(null);
 
             if (employeeInfo.getSalaryType() == SalaryType.MONTHLY) {
                 bank.doTransaction(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
-                return new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary());
+                return Nullable.of(new Salary(employeeInfo.getTargetIBAN(), employeeInfo.getSalary()));
             } else {
                 final Nullable<TimeTrackingInformation> optionalTimeTrackingInformation = Nullable.of(timeTracker.getTimeTrackingInformation(employeeId));
-
-                final Nullable<Salary> optionalSalary = optionalTimeTrackingInformation.map(trackingInformation -> {
+                return optionalTimeTrackingInformation.map(trackingInformation -> {
                     final int salary = employeeInfo.getSalary() * trackingInformation.getTotalHours();
 
                     bank.doTransaction(employeeInfo.getTargetIBAN(), salary);
                     return new Salary(employeeInfo.getTargetIBAN(), salary);
                 });
-                if (optionalSalary.isPresent()) return optionalSalary.get();
-                return null;
             }
         });
-        if(nullableSalary.isPresent()) return nullableSalary.get();
-        return null;
+        return nullableSalary.getOrElse(null);
     }
 
     @Override

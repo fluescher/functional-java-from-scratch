@@ -6,7 +6,9 @@ import java.util.function.Function;
 public interface Nullable <T> {
     boolean isPresent();
     T get();
+    T getOrElse(T fallback);
     <U> Nullable<U> map(Function<T,U> f);
+    <U> Nullable<U> flatMap(Function<T, Nullable<U>> f);
 
     static <T> Nullable<T> of(T reference) {
         if(reference == null) return new Null();
@@ -35,8 +37,18 @@ public interface Nullable <T> {
         }
 
         @Override
+        public T getOrElse(T fallback) {
+            return value;
+        }
+
+        @Override
         public <U> Nullable<U> map(Function<T, U> f) {
             return Nullable.of(f.apply(this.value));
+        }
+
+        @Override
+        public <U> Nullable<U> flatMap(Function<T, Nullable<U>> f) {
+            return f.apply(this.value);
         }
     }
 
@@ -56,7 +68,17 @@ public interface Nullable <T> {
         }
 
         @Override
+        public T getOrElse(T fallback) {
+            return fallback;
+        }
+
+        @Override
         public <U> Nullable<U> map(Function<T, U> f) {
+            return new Null<>();
+        }
+
+        @Override
+        public <U> Nullable<U> flatMap(Function<T, Nullable<U>> f) {
             return new Null<>();
         }
     }
